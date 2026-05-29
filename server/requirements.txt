@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+httpx[http2]==0.27.2
+yt-dlp==2024.10.7
+ffmpeg-python==0.2.0
+mitmproxy==10.4.2
+PyJWT==2.9.0
+cryptography==43.0.1
+python-multipart==0.0.9
+aiofiles==24.1.0
+pydantic-settings==2.5.2

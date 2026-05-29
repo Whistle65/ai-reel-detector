@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Secrets — never commit these
+server/.env
+server/cookies.txt
+server/AuthKey_*.p8
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+
+# macOS
+.DS_Store
+
+# Keys
+*.key
+*.pem
+*.p8
+*.p12

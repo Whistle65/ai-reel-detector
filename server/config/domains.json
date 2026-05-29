@@ -1,0 +1,16 @@
+{
+  "cdn_domains": [
+    "cdninstagram.com",
+    "fbcdn.net",
+    "instagram.fxx1-1.fna.fbcdn.net",
+    "video.xx.fbcdn.net"
+  ],
+  "video_extensions": [".mp4", ".m4v", ".mov"],
+  "video_mime_types": ["video/mp4", "video/quicktime", "video/x-m4v"],
+  "url_patterns": [
+    "/v/",
+    "bytestart=",
+    "efg=",
+    "_nc_ht=instagram"
+  ]
+}
