@@ -26,3 +26,6 @@ DerivedData/
 *.pem
 *.p8
 *.p12
+
+# Exception: mitmproxy CA cert is a public certificate bundled in the app
+!ios/ReelDetector/Resources/mitmproxy-ca-cert.pem
