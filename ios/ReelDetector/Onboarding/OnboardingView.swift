@@ -1,5 +1,5 @@
 import SwiftUI
-import NetworkExtension
+import UserNotifications
 
 struct OnboardingView: View {
     @ObservedObject var vpn = VPNManager.shared
@@ -12,8 +12,8 @@ struct OnboardingView: View {
             Color(.systemBackground).ignoresSafeArea()
             TabView(selection: $step) {
                 WelcomePage().tag(0)
-                VPNPage(vpn: vpn).tag(1)
-                CertPage().tag(2)
+                CertPage().tag(1)
+                WireGuardPage(vpn: vpn).tag(2)
                 NotificationsPage(granted: $notificationsGranted).tag(3)
                 ReadyPage(onComplete: onComplete).tag(4)
             }
@@ -43,30 +43,24 @@ struct OnboardingView: View {
     private var nextLabel: String {
         switch step {
         case 0: return "Get Started"
-        case 1: return vpn.isInstalled ? "Continue" : "Install VPN"
-        case 2: return "Install Certificate"
+        case 1: return "Install Certificate"
+        case 2: return "Open WireGuard"
         case 3: return "Allow Notifications"
         default: return "Continue"
         }
     }
 
     private var canAdvance: Bool {
-        switch step {
-        case 1: return true
-        case 3: return notificationsGranted
-        default: return true
-        }
+        step == 3 ? notificationsGranted : true
     }
 
     private func advance() {
         switch step {
         case 1:
-            if !vpn.isInstalled {
-                Task { await vpn.install(); vpn.connect() }
-            }
+            CertificateInstaller.serveMobileConfig()
             step = 2
         case 2:
-            CertificateInstaller.serveMobileConfig()
+            vpn.openWireGuard()
             step = 3
         case 3:
             requestNotifications()
@@ -105,27 +99,6 @@ private struct WelcomePage: View {
     }
 }
 
-private struct VPNPage: View {
-    @ObservedObject var vpn: VPNManager
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "network.badge.shield.half.filled")
-                .resizable().scaledToFit().frame(width: 70)
-                .foregroundStyle(.tint)
-            Text("Step 1: Allow VPN").font(.title2.bold())
-            Text("A VPN is used to route your traffic through our private analysis server. Your video content is never stored.")
-                .font(.body).multilineTextAlignment(.center)
-                .foregroundStyle(.secondary).padding(.horizontal)
-            if let err = vpn.error {
-                Text(err).font(.caption).foregroundStyle(.red)
-            }
-            Spacer()
-        }
-        .padding()
-    }
-}
-
 private struct CertPage: View {
     var body: some View {
         VStack(spacing: 20) {
@@ -133,24 +106,65 @@ private struct CertPage: View {
             Image(systemName: "lock.shield")
                 .resizable().scaledToFit().frame(width: 70)
                 .foregroundStyle(.tint)
-            Text("Step 2: Trust Certificate").font(.title2.bold())
-            VStack(alignment: .leading, spacing: 8) {
+            Text("Step 1: Trust Certificate").font(.title2.bold())
+            Text("ReelDetector needs to inspect HTTPS traffic to detect Reels. This requires installing a trusted certificate.")
+                .font(.body).multilineTextAlignment(.center)
+                .foregroundStyle(.secondary).padding(.horizontal)
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach([
-                    "Safari will open and download a profile",
-                    "Go to Settings → General",
-                    "Tap VPN & Device Management",
+                    "Tap below — Safari opens and downloads a profile",
+                    "Go to Settings → General → VPN & Device Management",
                     "Install the ReelDetector profile",
                     "Go to Settings → General → About → Certificate Trust Settings",
-                    "Enable full trust for the certificate",
-                ], id: \.self) { step in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
+                    "Enable full trust for the ReelDetector certificate",
+                ], id: \.self) { instruction in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "chevron.right.circle.fill")
                             .foregroundStyle(.tint)
-                        Text(step).font(.subheadline)
+                        Text(instruction).font(.subheadline)
                     }
                 }
             }
             .padding(.horizontal)
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+private struct WireGuardPage: View {
+    @ObservedObject var vpn: VPNManager
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "network.badge.shield.half.filled")
+                .resizable().scaledToFit().frame(width: 70)
+                .foregroundStyle(.tint)
+            Text("Step 2: Set Up VPN").font(.title2.bold())
+            Text("Traffic is routed through a private VPN so Reels can be analyzed. You'll use the free WireGuard app.")
+                .font(.body).multilineTextAlignment(.center)
+                .foregroundStyle(.secondary).padding(.horizontal)
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach([
+                    "Install WireGuard from the App Store if you haven't already",
+                    "Tap below to open WireGuard",
+                    "Tap + → Create from QR Code",
+                    "Scan the QR code shown in your VPS terminal",
+                    "Enable the tunnel in WireGuard",
+                ], id: \.self) { instruction in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "chevron.right.circle.fill")
+                            .foregroundStyle(.tint)
+                        Text(instruction).font(.subheadline)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            if vpn.isConnected {
+                Label("VPN Connected", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.subheadline.bold())
+            }
             Spacer()
         }
         .padding()
@@ -166,7 +180,7 @@ private struct NotificationsPage: View {
                 .resizable().scaledToFit().frame(width: 70)
                 .foregroundStyle(.tint)
             Text("Step 3: Notifications").font(.title2.bold())
-            Text("Allow notifications so analysis results can appear in the Dynamic Island even when the app is in the background.")
+            Text("Allow notifications so analysis results appear in the Dynamic Island even when the app is in the background.")
                 .font(.body).multilineTextAlignment(.center)
                 .foregroundStyle(.secondary).padding(.horizontal)
             Spacer()

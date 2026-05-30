@@ -15,9 +15,6 @@ struct ContentView: View {
             MainTabView()
                 .task {
                     await vpn.load()
-                    if vpn.isInstalled && !vpn.isConnected {
-                        vpn.connect()
-                    }
                     await liveActivity.startActivity()
                 }
         }
@@ -110,8 +107,8 @@ private struct SettingsView: View {
                         Text(vpn.isConnected ? "Connected" : "Disconnected")
                             .foregroundStyle(vpn.isConnected ? .green : .red)
                     }
-                    Button(vpn.isConnected ? "Disconnect" : "Connect") {
-                        vpn.isConnected ? vpn.disconnect() : vpn.connect()
+                    Button("Open WireGuard") {
+                        vpn.openWireGuard()
                     }
                 }
                 Section("Certificate") {
