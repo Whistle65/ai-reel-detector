@@ -91,6 +91,7 @@ ExecStart=/opt/reeldetector/venv/bin/mitmdump \
     --mode transparent \
     --showhost \
     --ssl-insecure \
+    --allow-hosts '.*cdninstagram\.com|.*fbcdn\.net|.*instagram\.com' \
     -s mitmproxy_addon.py
 Restart=always
 RestartSec=3
@@ -115,3 +116,8 @@ echo "4. Fill in IOS_DEVICE_PUBLIC_KEY_HERE in /etc/wireguard/wg0.conf with the 
 echo "5. systemctl start wg-quick@wg0 reeldetector-api reeldetector-mitm"
 echo "6. Copy mitmproxy CA cert:"
 echo "   scp ubuntu@VPS_IP:/root/.mitmproxy/mitmproxy-ca-cert.pem <local path>"
+echo ""
+echo "=== To update the live mitmproxy service after code changes ==="
+echo "   cd /opt/reeldetector && git pull"
+echo "   systemctl daemon-reload"
+echo "   systemctl restart reeldetector-mitm reeldetector-api"

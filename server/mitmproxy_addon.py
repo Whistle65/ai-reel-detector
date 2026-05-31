@@ -1,20 +1,22 @@
-"""mitmproxy addon: intercepts Instagram CDN video streams and triggers analysis."""
+"""mitmproxy addon: intercepts Instagram CDN video streams and triggers analysis.
+
+Only Instagram/Facebook CDN traffic is MITM'd; all other HTTPS traffic passes
+through as an encrypted relay so users' banking, email, etc. are never decrypted.
+"""
 
 import asyncio
 import json
 import logging
 import os
-import re
 import threading
 from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from mitmproxy import http
+from mitmproxy import ctx, http
 
 log = logging.getLogger(__name__)
 
-# Load CDN domain config
 _CONFIG_PATH = Path(__file__).parent / "config" / "domains.json"
 with open(_CONFIG_PATH) as f:
     _CFG = json.load(f)
@@ -23,10 +25,17 @@ CDN_DOMAINS: set[str] = set(_CFG["cdn_domains"])
 URL_PATTERNS: list[str] = _CFG["url_patterns"]
 VIDEO_MIME: set[str] = set(_CFG["video_mime_types"])
 
-ANALYZER_URL = os.environ.get("ANALYZER_URL", "http://127.0.0.1:8000/analyze")
+# mitmproxy only decrypts hosts matching these patterns.
+# Everything else is forwarded as a raw TCP relay — no certificate presented, no inspection.
+_ALLOW_HOSTS = [
+    r".*cdninstagram\.com",
+    r".*fbcdn\.net",
+    r".*instagram\.com",
+    r"instagram\.com",
+]
 
-# Maps X-Forwarded-For or client IP → device_id for push routing
-_active_devices: dict[str, str] = {}
+ANALYZER_URL = os.environ.get("ANALYZER_URL", "http://127.0.0.1:8000/analyze")
+_MAX_SEEN = 5_000
 
 
 def _is_video_stream(flow: http.HTTPFlow) -> bool:
@@ -53,6 +62,12 @@ class ReelDetectorAddon:
         t = threading.Thread(target=self._loop.run_forever, daemon=True)
         t.start()
 
+    def configure(self, updates):
+        # Set allow_hosts so mitmproxy only MITM's Instagram/Facebook CDN traffic.
+        # Non-matching hosts pass through without decryption.
+        if not ctx.options.allow_hosts:
+            ctx.options.allow_hosts = _ALLOW_HOSTS
+
     def response(self, flow: http.HTTPFlow):
         if not _is_video_stream(flow):
             return
@@ -61,6 +76,9 @@ class ReelDetectorAddon:
         key = self._url_key(url)
         if key in self._seen:
             return
+
+        if len(self._seen) >= _MAX_SEEN:
+            self._seen.clear()
         self._seen.add(key)
 
         device_id = _extract_device_id(flow)
@@ -89,9 +107,7 @@ class ReelDetectorAddon:
     @staticmethod
     def _url_key(url: str) -> str:
         parsed = urlparse(url)
-        # Strip byte-range params so duplicate segment requests are deduplicated
-        path = parsed.path
-        return f"{parsed.netloc}{path}"
+        return f"{parsed.netloc}{parsed.path}"
 
 
 addons = [ReelDetectorAddon()]

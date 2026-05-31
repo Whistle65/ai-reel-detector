@@ -16,18 +16,31 @@
     <dict>
         <key>NSAllowsLocalNetworking</key>
         <true/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>78.46.218.15</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
     </dict>
     <key>UIBackgroundModes</key>
     <array>
         <string>remote-notification</string>
     </array>
     <key>SERVER_BASE_URL</key>
-    <string>https://YOUR_VPS_IP:8000</string>
+    <string>http://78.46.218.15:8000</string>
     <key>SERVER_HOST</key>
-    <string>YOUR_VPS_IP</string>
+    <string>78.46.218.15</string>
     <key>NSUserActivityTypes</key>
     <array>
         <string>INSendMessageIntent</string>
+    </array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>wireguard</string>
+        <string>instagram</string>
     </array>
     <key>NSSupportsLiveActivities</key>
     <true/>

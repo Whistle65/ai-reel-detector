@@ -4,37 +4,53 @@ import UserNotifications
 struct OnboardingView: View {
     @ObservedObject var vpn = VPNManager.shared
     @State private var step = 0
-    @State private var notificationsGranted = false
     var onComplete: () -> Void
 
     var body: some View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
-            TabView(selection: $step) {
-                WelcomePage().tag(0)
-                CertPage().tag(1)
-                WireGuardPage(vpn: vpn).tag(2)
-                NotificationsPage(granted: $notificationsGranted).tag(3)
-                ReadyPage(onComplete: onComplete).tag(4)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
 
-            VStack {
-                Spacer()
-                if step < 4 {
-                    Button(action: advance) {
-                        Text(nextLabel)
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(canAdvance ? Color.accentColor : Color.gray)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .padding(.horizontal)
+            if step == 0 {
+                WelcomePage()
+                VStack {
+                    Spacer()
+                    Button("Get Started") {
+                        withAnimation { step = 1 }
                     }
-                    .disabled(!canAdvance)
-                    .padding(.bottom, 32)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal)
+                    .padding(.bottom, 40)
+                }
+            } else {
+                TabView(selection: $step) {
+                    CertPage().tag(1)
+                    WireGuardPage(vpn: vpn).tag(2)
+                    NotificationsPage().tag(3)
+                    ReadyPage(onComplete: onComplete).tag(4)
+                }
+                .tabViewStyle(.page(indexDisplayMode: step < 4 ? .always : .never))
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
+
+                if step < 4 {
+                    VStack {
+                        Spacer()
+                        Button(action: advance) {
+                            Text(nextLabel)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.accentColor)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .padding(.horizontal)
+                        }
+                        .padding(.bottom, 64)
+                    }
                 }
             }
         }
@@ -42,16 +58,11 @@ struct OnboardingView: View {
 
     private var nextLabel: String {
         switch step {
-        case 0: return "Get Started"
         case 1: return "Install Certificate"
         case 2: return "Open WireGuard"
         case 3: return "Allow Notifications"
         default: return "Continue"
         }
-    }
-
-    private var canAdvance: Bool {
-        step == 3 ? notificationsGranted : true
     }
 
     private func advance() {
@@ -70,10 +81,18 @@ struct OnboardingView: View {
     }
 
     private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge]) { granted, _ in
-            DispatchQueue.main.async {
-                notificationsGranted = granted
-                step = 4
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge]) { _, _ in
+                    DispatchQueue.main.async { step = 4 }
+                }
+            case .denied:
+                DispatchQueue.main.async {
+                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                }
+            default:
+                DispatchQueue.main.async { step = 4 }
             }
         }
     }
@@ -93,6 +112,7 @@ private struct WelcomePage: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
+            Spacer()
             Spacer()
         }
         .padding()
@@ -126,6 +146,7 @@ private struct CertPage: View {
                 }
             }
             .padding(.horizontal)
+            Spacer()
             Spacer()
         }
         .padding()
@@ -166,13 +187,13 @@ private struct WireGuardPage: View {
                     .font(.subheadline.bold())
             }
             Spacer()
+            Spacer()
         }
         .padding()
     }
 }
 
 private struct NotificationsPage: View {
-    @Binding var granted: Bool
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -183,6 +204,7 @@ private struct NotificationsPage: View {
             Text("Allow notifications so analysis results appear in the Dynamic Island even when the app is in the background.")
                 .font(.body).multilineTextAlignment(.center)
                 .foregroundStyle(.secondary).padding(.horizontal)
+            Spacer()
             Spacer()
         }
         .padding()

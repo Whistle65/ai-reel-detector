@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import NetworkExtension
 import UIKit
 
@@ -6,30 +7,35 @@ import UIKit
 final class VPNManager: ObservableObject {
     static let shared = VPNManager()
 
-    @Published var status: NEVPNStatus = .disconnected
+    @Published var isConnected = false
 
-    private var observer: Any?
+    private var monitor: NWPathMonitor?
 
     func load() async {
-        status = NEVPNManager.shared().connection.status
-        observer = NotificationCenter.default.addObserver(
-            forName: .NEVPNStatusDidChange,
-            object: NEVPNManager.shared().connection,
-            queue: .main
-        ) { [weak self] _ in
+        let m = NWPathMonitor()
+        monitor = m
+        m.pathUpdateHandler = { [weak self] path in
+            // WireGuard (and other VPN tunnels) create utun interfaces, which
+            // NWPathMonitor reports as .other on iOS. Wi-Fi is .wifi, cellular is .cellular.
+            let vpnActive = path.usesInterfaceType(.other) && path.status == .satisfied
             Task { @MainActor in
-                self?.status = NEVPNManager.shared().connection.status
+                self?.isConnected = vpnActive
             }
         }
+        m.start(queue: DispatchQueue.global(qos: .background))
     }
 
-    var isConnected: Bool { status == .connected }
+    // Computed to keep ContentView's switch statements working without changes
+    var status: NEVPNStatus { isConnected ? .connected : .disconnected }
 
     func openWireGuard() {
-        // Deep-link into the WireGuard app; falls back to App Store if not installed
         let wireGuard = URL(string: "wireguard://")!
-        let appStore = URL(string: "https://apps.apple.com/app/wireguard/id1441195209")!
-        let target = UIApplication.shared.canOpenURL(wireGuard) ? wireGuard : appStore
-        UIApplication.shared.open(target)
+        if UIApplication.shared.canOpenURL(wireGuard) {
+            UIApplication.shared.open(wireGuard)
+        } else {
+            // itms-apps opens App Store app directly, avoiding browser redirect issues
+            let appStore = URL(string: "itms-apps://itunes.apple.com/app/id1441195209")!
+            UIApplication.shared.open(appStore)
+        }
     }
 }

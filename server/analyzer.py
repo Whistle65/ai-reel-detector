@@ -15,6 +15,13 @@ HIVE_ENDPOINT = "https://api.thehive.ai/api/v2/task/sync"
 # Set to True once you have a Hive API key and want real classification.
 _HIVE_ENABLED = False
 
+# Load CDN domains from the same config mitmproxy_addon uses
+_DOMAINS_CFG_PATH = Path(__file__).parent / "config" / "domains.json"
+with open(_DOMAINS_CFG_PATH) as _f:
+    _DOMAINS_CFG = json.load(_f)
+_CDN_URL_DOMAINS: list[str] = _DOMAINS_CFG["cdn_domains"]
+_VIDEO_EXTENSIONS: tuple[str, ...] = tuple(_DOMAINS_CFG.get("video_extensions", [".mp4", ".m4v", ".mov"]))
+
 
 async def analyze_reel(video_url: str) -> dict:
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -70,7 +77,7 @@ async def _download_direct(url: str, output_path: Path):
                 async for chunk in resp.aiter_bytes(65536):
                     received += len(chunk)
                     if received > max_bytes:
-                        raise ValueError("Video exceeds 50 MB cap")
+                        raise ValueError(f"Video exceeds {settings.max_video_mb} MB cap")
                     f.write(chunk)
 
 
@@ -89,8 +96,11 @@ def _probe_duration_sync(path: Path) -> float:
         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(path)],
         capture_output=True, text=True,
     )
-    info = json.loads(result.stdout)
-    return float(info.get("format", {}).get("duration", 30))
+    try:
+        info = json.loads(result.stdout)
+        return float(info.get("format", {}).get("duration", 30))
+    except (json.JSONDecodeError, ValueError):
+        return 30.0
 
 
 def _ffmpeg_extract(video_path: Path, frames_dir: Path, fps: float):
@@ -145,10 +155,8 @@ async def _classify_frame(frame: Path, client: httpx.AsyncClient) -> float:
 
 
 def _is_cdn_url(url: str) -> bool:
-    cdn_domains = ["cdninstagram.com", "fbcdn.net"]
-    if any(d in url for d in cdn_domains):
+    if any(d in url for d in _CDN_URL_DOMAINS):
         return True
-    # Any direct video file URL — skip yt-dlp and download straight
     from urllib.parse import urlparse
     path = urlparse(url).path.lower()
-    return path.endswith((".mp4", ".m4v", ".mov", ".webm"))
+    return path.endswith(_VIDEO_EXTENSIONS)
