@@ -23,8 +23,10 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .toolbar {
-                if !store.entries.isEmpty {
-                    Button("Clear", role: .destructive) { store.clear() }
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    if !store.entries.isEmpty {
+                        Button("Clear", role: .destructive) { store.clear() }
+                    }
                 }
             }
         }
