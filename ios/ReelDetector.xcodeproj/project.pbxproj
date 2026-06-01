@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C94F8682FCBA6F200758AA9 /* mitmproxy-ca-cert.pem in Resources */ = {isa = PBXBuildFile; fileRef = 1C94F8672FCBA6F200758AA9 /* mitmproxy-ca-cert.pem */; };
 		1C94F86D2FCBAD0E00758AA9 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C94F86C2FCBAD0E00758AA9 /* ActivityKit.framework */; platformFilter = ios; };
 		1CB620D02FCCFD3400DAF94B /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1CB620CF2FCCFD3400DAF94B /* Network.framework */; };
 		1CD9D7D32FCA4A5B00B083DC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1CD9D7D22FCA4A5B00B083DC /* WidgetKit.framework */; };
@@ -40,7 +39,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1C94F8672FCBA6F200758AA9 /* mitmproxy-ca-cert.pem */ = {isa = PBXFileReference; lastKnownFileType = text; path = "mitmproxy-ca-cert.pem"; sourceTree = "<group>"; };
 		1C94F86C2FCBAD0E00758AA9 /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.4.sdk/System/Library/Frameworks/ActivityKit.framework; sourceTree = DEVELOPER_DIR; };
 		1CB620CF2FCCFD3400DAF94B /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.4.sdk/System/Library/Frameworks/Network.framework; sourceTree = DEVELOPER_DIR; };
 		1CD9D7AA2FCA477300B083DC /* ReelDetector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReelDetector.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -127,7 +125,6 @@
 		1CD9D7A12FCA477300B083DC = {
 			isa = PBXGroup;
 			children = (
-				1C94F8672FCBA6F200758AA9 /* mitmproxy-ca-cert.pem */,
 				1CD9D7E52FCA4AEC00B083DC /* ReelWidgetExtension.entitlements */,
 				1CD9D7AC2FCA477300B083DC /* ReelDetector */,
 				1CD9D7C02FCA47FE00B083DC /* PacketTunnel */,
@@ -250,7 +247,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1C94F8682FCBA6F200758AA9 /* mitmproxy-ca-cert.pem in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
