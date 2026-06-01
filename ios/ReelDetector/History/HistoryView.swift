@@ -7,11 +7,16 @@ struct HistoryView: View {
         NavigationView {
             Group {
                 if store.entries.isEmpty {
-                    ContentUnavailableView(
-                        "No Reels analyzed yet",
-                        systemImage: "film.stack",
-                        description: Text("Watch Instagram Reels to see results here")
-                    )
+                    VStack(spacing: 16) {
+                        Image(systemName: "film.stack")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("No Reels analyzed yet")
+                            .font(.headline)
+                        Text("Watch Instagram Reels to see results here")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
                     List {
                         ForEach(store.entries) { entry in
@@ -22,13 +27,13 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     if !store.entries.isEmpty {
                         Button("Clear", role: .destructive) { store.clear() }
                     }
                 }
-            }
+            })
         }
     }
 }
