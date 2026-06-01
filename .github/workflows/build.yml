@@ -13,6 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select latest Xcode
+        run: |
+          XCODE=$(ls /Applications | grep "^Xcode" | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s /Applications/$XCODE/Contents/Developer
+          xcodebuild -version
+
       - name: Build
         run: |
           xcodebuild \
