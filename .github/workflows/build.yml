@@ -1,0 +1,42 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project ios/ReelDetector.xcodeproj \
+            -scheme ReelDetector \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            build \
+            CONFIGURATION_BUILD_DIR=$PWD/build
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ReelDetector.app Payload/
+          zip -r ReelDetector.ipa Payload/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReelDetector-IPA
+          path: ReelDetector.ipa
+          retention-days: 30
