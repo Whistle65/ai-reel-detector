@@ -19,7 +19,7 @@ final class VPNManager: ObservableObject {
             // WireGuard (and other VPN tunnels) create utun interfaces, which
             // NWPathMonitor reports as .other on iOS. Wi-Fi is .wifi, cellular is .cellular.
             let vpnActive = path.usesInterfaceType(.other) && path.status == .satisfied
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.isConnected = vpnActive
             }
         }

@@ -53,8 +53,6 @@
 		1C94F8692FCBA77600758AA9 /* Exceptions for "ReelDetector" folder in "ReelDetector" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				App/ContentView.swift,
-				App/ReelDetectorApp.swift,
 				Resources/Info.plist,
 			);
 			target = 1CD9D7A92FCA477300B083DC /* ReelDetector */;
