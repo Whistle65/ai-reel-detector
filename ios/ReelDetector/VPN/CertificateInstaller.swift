@@ -4,11 +4,26 @@ import UIKit
 struct CertificateInstaller {
     static func serveMobileConfig() {
         guard let config = makeMobileConfig() else { return }
-        guard MobileConfigServer.bindAndListen(data: config) else { return }
+
+        // Request background execution so iOS doesn't suspend the socket server
+        // when Safari opens and ReelDetector moves to the background.
+        var bgTask: UIBackgroundTaskIdentifier = .invalid
+        bgTask = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(bgTask)
+            bgTask = .invalid
+        }
+
+        guard MobileConfigServer.bindAndListen(data: config, onDone: {
+            UIApplication.shared.endBackgroundTask(bgTask)
+            bgTask = .invalid
+        }) else {
+            UIApplication.shared.endBackgroundTask(bgTask)
+            return
+        }
+
         UIApplication.shared.open(URL(string: "http://127.0.0.1:8765/ca.mobileconfig")!)
     }
 
-    // Reads the bundled PEM, strips headers, and wraps DER bytes in a .mobileconfig plist.
     private static func makeMobileConfig() -> Data? {
         guard let pemURL = Bundle.main.url(forResource: "mitmproxy-ca-cert", withExtension: "pem"),
               let pem = try? String(contentsOf: pemURL) else { return nil }
@@ -66,12 +81,8 @@ struct CertificateInstaller {
     }
 }
 
-// One-shot HTTP server that serves the mobileconfig to Safari.
-// iOS only installs profiles downloaded through Safari, so localhost serving is required.
 enum MobileConfigServer {
-    // Binds and listens synchronously so the socket is ready before Safari opens.
-    // Returns false if the port is unavailable. Accepts the single connection async.
-    static func bindAndListen(data: Data) -> Bool {
+    static func bindAndListen(data: Data, onDone: @escaping () -> Void) -> Bool {
         let sock = socket(AF_INET, SOCK_STREAM, 0)
         guard sock >= 0 else { return false }
 
@@ -100,6 +111,7 @@ enum MobileConfigServer {
                 close(client)
             }
             close(sock)
+            onDone()
         }
         return true
     }

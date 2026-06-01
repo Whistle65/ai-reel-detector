@@ -2,8 +2,15 @@ import Foundation
 
 enum AppGroup {
     static let id = "group.com.yourname.reeldetector"
-    static let container = FileManager.default
-        .containerURL(forSecurityApplicationGroupIdentifier: id)!
+
+    // Falls back to the app's own Documents folder if the App Group isn't
+    // provisioned (e.g. free-account sideload without a proper entitlement).
+    static let container: URL = {
+        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: id) {
+            return url
+        }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }()
 
     static var pendingURLFile: URL {
         container.appendingPathComponent("pending_url.txt")
