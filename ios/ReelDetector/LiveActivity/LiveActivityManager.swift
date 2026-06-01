@@ -4,6 +4,7 @@ import Foundation
 import UserNotifications
 
 @MainActor
+@available(iOS 16.2, *)
 final class LiveActivityManager: ObservableObject {
     static let shared = LiveActivityManager()
 

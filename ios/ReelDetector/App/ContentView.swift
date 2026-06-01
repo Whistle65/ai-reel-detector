@@ -3,19 +3,22 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("onboardingComplete") private var onboardingComplete = false
     @ObservedObject var vpn = VPNManager.shared
-    @ObservedObject var liveActivity = LiveActivityManager.shared
 
     var body: some View {
         if !onboardingComplete {
             OnboardingView {
                 onboardingComplete = true
-                Task { await liveActivity.startActivity() }
+                if #available(iOS 16.2, *) {
+                    Task { await LiveActivityManager.shared.startActivity() }
+                }
             }
         } else {
             MainTabView()
                 .task {
                     await vpn.load()
-                    await liveActivity.startActivity()
+                    if #available(iOS 16.2, *) {
+                        await LiveActivityManager.shared.startActivity()
+                    }
                 }
         }
     }
